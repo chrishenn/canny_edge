@@ -2,11 +2,9 @@ import math
 
 import torch as t
 from torch import nn as nn
-from torch.nn import functional as F
 
 
 
-## Requires images with float values spanning [0,1]
 class Canny(nn.Module):
     def __init__(self, thresh_lo, thresh_hi, sobel_size=5, sigma_gauss=None):
         super().__init__()
