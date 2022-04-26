@@ -111,23 +111,24 @@ class Canny(nn.Module):
         neb_ids = self.selection_ids[grad_phase]
         nebs = selections.gather(1, neb_ids[:,0,...].permute(0,3,1,2))
 
-        mask1 = grad_mag <= nebs[:,0,None,...]  # using one gradient-direction-neighbor as a tiebreaker
+        mask1 = grad_mag < nebs[:,0,None,...]
         mask2 = grad_mag < nebs[:,1,None,...]
-        mask = mask1 | mask2
-        grad_mag = t.where(mask, t.zeros_like(mask).float(), grad_mag)
+        mask_suppress = mask1 | mask2
+        grad_mag = t.where(mask_suppress, t.zeros_like(mask_suppress).float(), grad_mag)
 
-        ## thresholds, hysteresis
-        mask = grad_mag < self.low_threshold
-        grad_mag = t.where(mask, t.zeros_like(mask).float(), grad_mag)
+        ## thresholds
+        mask_lo = grad_mag < self.low_threshold
+        grad_mag = t.where(mask_lo, t.zeros_like(mask_lo).float(), grad_mag)
 
         weak_mask = (grad_mag < self.high_threshold) & (grad_mag > self.low_threshold)
         high_mask = grad_mag > self.high_threshold
 
+        ## hysteresis
         high_nebs = self.hysteresis(high_mask.float())
         weak_keep = weak_mask & (high_nebs > 0)
-        mask = weak_keep.logical_not() & high_mask.logical_not()
+        mask_not_edge = weak_keep.logical_not() & high_mask.logical_not()
+        grad_mag = t.where(mask_not_edge, t.zeros_like(mask_not_edge).float(), grad_mag)
 
-        grad_mag = t.where(mask, t.zeros_like(mask).float(), grad_mag)
         return grad_mag
 
 
