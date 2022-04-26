@@ -22,11 +22,12 @@ def tensor_imshow(_img, dpi=100, axis='off'):
 
 
 if __name__ == "__main__":
-    # device = t.device('cuda:0')
-    device = t.device('cpu')
+    device = t.device('cuda:0')
+    # device = t.device('cpu')
 
     # create filter
-    canny_filter = Canny(thresh_lo=0.1, thresh_hi=0.2).to(device)
+    # canny_filter = Canny(thresh_lo=0.1, thresh_hi=0.2).to(device)
+    canny_filter = t.jit.script(Canny(0.1, 0.2)).to(device)
 
     # load data
     proj_dir = os.path.split(__file__)[0]

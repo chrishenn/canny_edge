@@ -6,14 +6,13 @@ from torch import nn as nn
 
 
 class Canny(nn.Module):
-    def __init__(self, thresh_lo, thresh_hi, sobel_size=5, sigma_gauss=None):
+    def __init__(self, thresh_lo, thresh_hi, sobel_k=5, gauss_k=5, gauss_sigma=0.1):
         super().__init__()
 
         self.low_threshold, self.high_threshold = thresh_lo, thresh_hi
-        self.sigma_gauss = sigma_gauss
 
-        self.gen_sobel(sobel_size)
-        if sigma_gauss is not None: self.gen_gauss(5, sigma=1)
+        self.gen_sobel(sobel_k)
+        self.gen_gauss(gauss_k, gauss_sigma)
         self.gen_selection_map()
         self.gen_hysteresis()
 
@@ -66,7 +65,7 @@ class Canny(nn.Module):
         self.sobel_x.weight.data = sobel_2D.clone().t().view(1,1,k_size,k_size)
         self.sobel_y.weight.data = sobel_2D.view(1,1,k_size,k_size)
 
-    def gen_gauss(self, k_gauss, sigma=0.8):
+    def gen_gauss(self, k_gauss, sigma):
 
         D_1 = t.linspace(-1, 1, k_gauss)
         x, y = t.meshgrid(D_1, D_1)
@@ -95,8 +94,7 @@ class Canny(nn.Module):
         images.div_(images.max())
 
         ## gauss blur
-        if self.sigma_gauss is not None:
-            images = self.gauss(images)
+        images = self.gauss(images)
 
         ## take intensity-gradients
         sobel_x = self.sobel_x(images)
@@ -131,9 +129,6 @@ class Canny(nn.Module):
 
         grad_mag = t.where(mask, t.zeros_like(mask).float(), grad_mag)
         return grad_mag
-
-
-
 
 
 
